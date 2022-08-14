@@ -19,6 +19,7 @@ func searchBestPriceForEndGame(db *sql.DB, game *entities.BinaryOptionGame, prof
 
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	var betList []*entities.BinaryOptionGameBet
@@ -39,6 +40,7 @@ func searchBestPriceForEndGame(db *sql.DB, game *entities.BinaryOptionGame, prof
 	}
 
 	temp := lastCandleInfo(db, game)
+
 	info = &temp
 
 	if len(betList) == 0 {

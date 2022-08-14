@@ -24,7 +24,7 @@ func SetStatusFinishGame(db *sql.DB, tx *sql.Tx, id uint64) (uint64, uint64, int
 	}
 
 	query = `UPDATE binary_option_game
-		SET game_id_status = 4
+		SET game_id_status = 3
 		WHERE id = ?`
 
 	_, err = db.Exec(query, id)
@@ -35,6 +35,10 @@ func SetStatusFinishGame(db *sql.DB, tx *sql.Tx, id uint64) (uint64, uint64, int
 	}
 
 	bestResultGame := searchBestPriceForEndGame(db, &g, 0)
+
+	if bestResultGame.Price == 0 {
+		return 0, 0, 0
+	}
 
 	saveBestResultGame(db, &g, bestResultGame)
 

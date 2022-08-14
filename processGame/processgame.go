@@ -9,7 +9,7 @@ import (
 func main() {
 	godotenv.Load(".env")
 
-	for range time.Tick(time.Second * 5) {
+	for range time.Tick(time.Second * 1) {
 		memcacheConnect()
 		conn := dbConnect()
 

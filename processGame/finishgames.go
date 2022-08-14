@@ -40,22 +40,23 @@ func finishGames(db *sql.DB) {
 	fmt.Printf("%v finish changed \n", len(list))
 
 	if len(list) > 0 {
-		var toCache []entities.GamesUpdate
+		// var toCache []entities.GamesUpdate
 		for _, v := range list {
 			tx, _ := db.Begin()
+			fmt.Println(tx)
 
 			idGame, idSymbol, idTime := finishgame.SetStatusFinishGame(db, tx, v.Id)
+			fmt.Println(idGame, idSymbol, idTime)
+			// var game entities.GamesUpdate
+			// game.Id = idGame
+			// game.IdMoedasPares = idSymbol
+			// game.GameIdTypeTime = idTime
 
-			var game entities.GamesUpdate
-			game.Id = idGame
-			game.IdMoedasPares = idSymbol
-			game.GameIdTypeTime = idTime
-
-			toCache = append(toCache, game)
+			// toCache = append(toCache, game)
 		}
 
-		push(toCache)
+		// push(toCache)
 	}
 
-	defer db.Close()
+	// defer db.Close()
 }

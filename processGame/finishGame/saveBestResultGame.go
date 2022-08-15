@@ -9,9 +9,10 @@ import (
 
 func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame *entities.BestResultGame) bool {
 	if len(bestResultGame.ListPlayersWin) > 0 {
-		query := `UPDATE binary_option_game_bet SET amount_win_dolar = ? WHERE id IN (?);`
+		query := `UPDATE binary_option_game_bet SET amount_win_dolar = ? WHERE id = ?;`
 
 		x := math.NewFloat(g.GameProfitPercent)
+		var amountWinDolar float64
 
 		for _, v := range bestResultGame.ListPlayersWin {
 			percent := math.NewFloat(100)
@@ -19,13 +20,22 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 			x.Quo(x, percent)
 
 			betAmountDollar := math.NewFloat(v.BetAmountDolar)
+
 			x.Mul(x, betAmountDollar)
+
+			amountWinDolar, _ = x.Float64()
 		}
 
-		_, err := tx.Exec(query, x, g.Id)
+		res, err := tx.Exec(query, amountWinDolar, &bestResultGame.Id)
 
 		if err != nil {
 			fmt.Println("SBRG 1: " + err.Error())
+			return false
+		}
+
+		affcRows, _ := res.RowsAffected()
+		if affcRows == 0 {
+			fmt.Println("SBRG 2: ")
 			return false
 		}
 	}
@@ -36,7 +46,7 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 		_, err := tx.Exec(query, g.Id)
 
 		if err != nil {
-			fmt.Println("SBRG 2: " + err.Error())
+			fmt.Println("SBRG 3: " + err.Error())
 			return false
 		}
 	}
@@ -81,7 +91,7 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 		bestResultGame.TotalWinDolarTraderBot, g.Id)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("SBRG 4: " + err.Error())
 		return false
 	}
 
@@ -93,7 +103,7 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 	_, err = tx.Exec(query, g.Id)
 
 	if err != nil {
-		fmt.Println("SBRG 3: " + err.Error())
+		fmt.Println("SBRG 5: " + err.Error())
 		return false
 	}
 

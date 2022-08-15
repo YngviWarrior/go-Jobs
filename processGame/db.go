@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"time"
 )
@@ -13,15 +12,16 @@ func dbConnect() (db *sql.DB) {
 		err := db.Ping()
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("DC 1: " + err.Error())
 		}
+
 		return
 	}
 
 	db, err := sql.Open("mysql", os.Getenv("db"))
 
 	if err != nil {
-		log.Println("mysql conn err: ", err)
+		fmt.Println("DC 2: ", err.Error())
 	}
 
 	db.SetConnMaxLifetime(time.Minute)

@@ -39,7 +39,7 @@ func lastCandleInfo(tx *sql.Tx, game *entities.BinaryOptionGame) (b entities.Bes
 	err := tx.QueryRow(query, game.IdMoedasPares).Scan(&c.Mts, &c.Open, &c.Close, &c.High, &c.Low, &c.Volume)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("LCI 1: " + err.Error())
 		return
 	}
 

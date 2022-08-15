@@ -19,51 +19,15 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 		fmt.Println("RPIBLP 1:" + err.Error())
 	}
 
-	query := `
-	CREATE TEMPORARY TABLE bonus_indication_process
-	(
-		id bigint(20) NOT NULL,
-		id_type tinyint(1) NOT NULL,
-		id_user bigint(20) NOT NULL,
-		valor decimal(16,8) NOT NULL,
-		KEY ix_bonus_indication_process_id_user (id_user)
-	) ENGINE=InnoDB;
-		
-	SELECT *
-	FROM (
-		SELECT b.id, ? as id_type, b.id_user, b.valor
-		FROM bonus_indicacao b
-		WHERE b.id_game = ?
-		AND b.status_received_payment = 0
-	) as t;
-
-
-	SET @totalBonusIndication := COALESCE(
-		(SELECT SUM(b.valor)
-		FROM bonus_indication_process b
-		WHERE b.id_type = ?
-	),0);
-
-	SET @totalBonusTrader := COALESCE(
-		(SELECT SUM(b.valor)
-		FROM bonus_indication_process b
-		WHERE b.id_type = ?
-	),0);
-
-	SET @campanyLeft := (COALESCE(
-		(SELECT (SUM(b.bet_amount_dolar) - SUM(IF(b.amount_win_dolar > 0,b.bet_amount_dolar + b.amount_win_dolar,0)))
-		FROM binary_option_game_bet b
-		WHERE b.id_game = ? AND b.id_balance = ?
-	),0) - @totalBonusTrader - @totalBonusIndication);
-
-	UPDATE binary_option_game g
-	SET
-		g.bonus_trader_total_amount_dolar = TRUNCATE(@totalBonusTrader,8)
-		,g.bonus_indication_total_amount_dolar = TRUNCATE(@totalBonusIndication,8)
-		,g.company_tax_amount_dolar_from_game_tax = TRUNCATE(@campanyLeft,8)
-	WHERE  g.id = ?; `
-
-	_, err = tx.Query(query, 1, id, 1, 2, id, 3, id)
+	_, err = tx.Exec(`
+		CREATE TEMPORARY TABLE bonus_indication_process(
+			id bigint(20) NOT NULL,
+			id_type tinyint(1) NOT NULL,
+			id_user bigint(20) NOT NULL,
+			valor decimal(16,8) NOT NULL,
+			KEY ix_bonus_indication_process_id_user (id_user)
+		) ENGINE=InnoDB;
+	`)
 
 	if err != nil {
 		fmt.Println("RPIBLP 2:" + err.Error())
@@ -71,14 +35,134 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 	}
 
 	rows, err := tx.Query(`
+		SELECT *
+			FROM (
+				SELECT b.id, ? as id_type, b.id_user, b.valor
+				FROM bonus_indicacao b
+				WHERE b.id_game = ?
+				AND b.status_received_payment = 0
+			)
+		as t;
+	`, 1, id)
+
+	if err != nil {
+		fmt.Println("RPIBLP 3:" + err.Error())
+		// return false
+	}
+
+	var bi []*entities.BonusIndicacao
+	for rows.Next() {
+		var b entities.BonusIndicacao
+
+		err := rows.Scan(&b.Id, &b.IdType, &b.IdUser, &b.Valor)
+
+		if err != nil {
+			fmt.Println("RPIBLP 4:" + err.Error())
+		}
+
+		bi = append(bi, &b)
+	}
+
+	if len(bi) == 0 {
+		fmt.Println("RPIBLP 5: No Bonus Indication.")
+	}
+
+	res, err := tx.Exec(`
+		SET @totalBonusIndication := COALESCE(
+			(SELECT SUM(b.valor)
+			FROM bonus_indication_process b
+			WHERE b.id_type = ?
+		),0)
+	`, 1)
+
+	if err != nil {
+		fmt.Println("RPIBLP 6:" + err.Error())
+		return false
+	}
+
+	affcRows, _ := res.RowsAffected()
+
+	if affcRows == 0 {
+		fmt.Println("RPIBLP 7: ")
+		// return false
+	}
+
+	res, err = tx.Exec(`
+		SET @totalBonusTrader := COALESCE(
+				(SELECT SUM(b.valor)
+				FROM bonus_indication_process b
+				WHERE b.id_type = ?
+			)
+		,0)
+	`, 1)
+
+	if err != nil {
+		fmt.Println("RPIBLP 8:" + err.Error())
+		return false
+	}
+
+	affcRows, _ = res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("RPIBLP 9: ")
+		// return false
+	}
+
+	res, err = tx.Exec(`
+		SET @campanyLeft := (COALESCE(
+			(SELECT (SUM(b.bet_amount_dolar) - SUM(IF(b.amount_win_dolar > 0,b.bet_amount_dolar + b.amount_win_dolar,0)))
+			FROM binary_option_game_bet b
+			WHERE b.id_game = ? AND b.id_balance = ?
+		),0) - @totalBonusTrader - @totalBonusIndication);
+	`, id, 20) // 3
+
+	if err != nil {
+		fmt.Println("RPIBLP 9:" + err.Error())
+		return false
+	}
+
+	affcRows, _ = res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("RPIBLP 10: ")
+		// return false
+	}
+
+	var tst float64
+	err = tx.QueryRow(`
+		SELECT @totalBonusTrader;
+	`).Scan(&tst)
+
+	if err != nil {
+		fmt.Println("RPIBLP TEST:" + err.Error())
+		return false
+	}
+	fmt.Println(tst)
+
+	res, err = tx.Exec(`UPDATE binary_option_game g
+	SET g.bonus_trader_total_amount_dolar = TRUNCATE(@totalBonusTrader,8)
+		,g.bonus_indication_total_amount_dolar = TRUNCATE(@totalBonusIndication,8)
+		,g.company_tax_amount_dolar_from_game_tax = TRUNCATE(@campanyLeft,8)
+	WHERE  g.id = ?;`, id)
+
+	if err != nil {
+		fmt.Println("RPIBLP 11:" + err.Error())
+		return false
+	}
+
+	affcRows, _ = res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("RPIBLP 12: ")
+		return false
+	}
+
+	rows, err = tx.Query(`
 		SELECT b.id, b.id_user, b.valor
 		FROM bonus_indicacao b
 		WHERE b.id_game = ? AND b.status_received_payment = 0
 	`, id)
 
 	if err != nil {
-		fmt.Println("RPIBLP 3:" + err.Error())
-		return false
+		fmt.Println("RPIBLP 13:" + err.Error())
+		// return false
 	}
 
 	var bonusIndicationList []*entities.BonusIndicacao
@@ -88,7 +172,7 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 		err := rows.Scan(&bonus.Id, &bonus.IdUser, &bonus.Valor)
 
 		if err != nil {
-			fmt.Println("RPIBLP 4:" + err.Error())
+			fmt.Println("RPIBLP 14:" + err.Error())
 			return false
 		}
 
@@ -100,8 +184,8 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 			modifyBalance(tx, v.IdUser, 24, 3, v.Valor, v.Id, true)
 		}
 	} else {
-		fmt.Println("RPIBLP 5: No Bonus" + err.Error())
-		return false
+		fmt.Println("RPIBLP 15: No Bonus" + err.Error())
+		// return false
 	}
 
 	rows, err = tx.Query(`
@@ -111,8 +195,8 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 	`, id)
 
 	if err != nil {
-		fmt.Println("RPIBLP 6:" + err.Error())
-		return false
+		fmt.Println("RPIBLP 16:" + err.Error())
+		// return false
 	}
 
 	var bonusTraderList []*entities.BonusTrader
@@ -122,7 +206,7 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 		err := rows.Scan(&bonus.Id, &bonus.IdUser, &bonus.Valor)
 
 		if err != nil {
-			fmt.Println("RPIBLP 7:" + err.Error())
+			fmt.Println("RPIBLP 17:" + err.Error())
 			return false
 		}
 
@@ -134,11 +218,11 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 			modifyBalance(tx, v.IdUser, 16, 9, v.Valor, v.Id, false)
 		}
 	} else {
-		fmt.Println("RPIBLP 8: No Bonus Trader")
-		return false
+		fmt.Println("RPIBLP 18: No Bonus Trader")
+		// return false
 	}
 
-	res, err := tx.Exec(`
+	res, err = tx.Exec(`
 		UPDATE bonus_indicacao b
 		JOIN bonus_indication_process bp ON bp.id = b.id AND bp.id_type = ?
 		SET b.status_received_payment = 1;
@@ -147,12 +231,16 @@ func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 		SET b.status_received_payment = 1;
 
 		DROP TEMPORARY TABLE IF EXISTS bonus_indication_process;
-	`, 1, 2)
+	`, 1, 1)
 
-	affcRows, _ := res.RowsAffected()
+	if err != nil {
+		fmt.Println("RPIBLP 19:" + err.Error())
+		return false
+	}
 
-	if err != nil || affcRows == 0 {
-		fmt.Println("RPIBLP 9:" + err.Error())
+	affcRows, _ = res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("RPIBLP 20: ")
 		return false
 	}
 

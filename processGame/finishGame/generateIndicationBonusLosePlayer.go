@@ -22,10 +22,10 @@ func generateIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 	}
 
 	activePeriod := 1
-	now := time.Now().Format("2006-01-02 15:04:05")
+	now := time.Now().Add(time.Hour * 3).Format("2006-01-02 15:04:05")
 
 	res, err := tx.Exec(`
-		INSERT INTO bonus_indicacao (id_user, id_user_origin, id_game, id_game_bet, id_balance, date_register, valor, status_received_payment) 
+		INSERT INTO bonus_indicacao (id_user, id_user_origin, id_game, id_game_bet, id_balance, date_register, valor, id_periud) 
 		SELECT u.id_indicador, u.id, b.id_game, b.id, ?, ?
 			,IF(b.amount_win_dolar = 0,
 				IF(
@@ -40,7 +40,6 @@ func generateIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 		JOIN usuarios indicador 
 			ON indicador.id = u.id_indicador 
 			AND (u.total_deposit_balance_play - u.total_lose_balance_play) > 0
-			
 		WHERE b.id_game = ?
 		AND b.id_balance = ?
 		`, 24, now, activePeriod, id, 3)

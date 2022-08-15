@@ -46,6 +46,7 @@ func searchBestPriceForEndGame(tx *sql.Tx, game *entities.BinaryOptionGame, prof
 
 	if len(betList) == 0 {
 		fmt.Println("SBPFEG 3: betList is empty")
+		ok = true
 		return
 	}
 

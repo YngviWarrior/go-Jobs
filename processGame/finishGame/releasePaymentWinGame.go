@@ -65,7 +65,7 @@ func releasePaymentWinGame(tx *sql.Tx, id uint64) bool {
 		err := rows.Scan(&bet.Id, &bet.IdUsuario, &bet.AmountWinDolar, &bet.IdBalance)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("RPIB 4: " + err.Error())
 		}
 
 		listBet = append(listBet, &bet)
@@ -76,7 +76,7 @@ func releasePaymentWinGame(tx *sql.Tx, id uint64) bool {
 			modifyBalance(tx, v.IdUsuario, v.IdBalance, 7, v.AmountWinDolar, v.Id, false)
 		}
 	} else {
-		fmt.Println("RPWG 4: No bets.")
+		fmt.Println("RPWG 5: No bets.")
 		return false
 	}
 
@@ -84,10 +84,10 @@ func releasePaymentWinGame(tx *sql.Tx, id uint64) bool {
 		UPDATE binary_option_game_bet b
 		SET b.status_received_win_payment = 1
 		WHERE b.id_game = ?
-	`, b.IdGame)
+	`, id)
 
 	if err != nil {
-		fmt.Println("RPWG 4: " + err.Error())
+		fmt.Println("RPWG 6: " + err.Error())
 		return false
 	}
 

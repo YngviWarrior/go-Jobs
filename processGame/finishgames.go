@@ -11,7 +11,7 @@ import (
 )
 
 func finishGames(db *sql.DB) {
-	now := time.Now().Add(time.Second + 2).Add(time.Hour + 3).Format("2006-01-02 15:04:05")
+	now := time.Now().Add(time.Second * 2).Add(time.Hour * 3).Format("2006-01-02 15:04:05")
 
 	query := `SELECT id
 	FROM binary_option_game
@@ -41,15 +41,18 @@ func finishGames(db *sql.DB) {
 	if len(list) > 0 {
 		var toCache []entities.GamesUpdate
 		for _, v := range list {
-			idGame, idSymbol, idTime := finishgame.SetStatusFinishGame(db, v.Id)
+			if v.Id == 2 {
+				idGame, idSymbol, idTime := finishgame.SetStatusFinishGame(db, v.Id)
+				break
 
-			if idGame != 0 {
-				var game entities.GamesUpdate
-				game.Id = idGame
-				game.IdMoedasPares = idSymbol
-				game.GameIdTypeTime = idTime
+				if idGame != 0 {
+					var game entities.GamesUpdate
+					game.Id = idGame
+					game.IdMoedasPares = idSymbol
+					game.GameIdTypeTime = idTime
 
-				toCache = append(toCache, game)
+					toCache = append(toCache, game)
+				}
 			}
 		}
 

@@ -13,13 +13,13 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 	tx, _ := db.Begin()
 
 	var g entities.BinaryOptionGame
-	query := `SELECT id, id_moedas_pares, game_id_type_time
+	query := `SELECT id, id_moedas_pares, game_id_type_time, game_profit_percent
 	FROM binary_option_game
 	WHERE id = ?
 	AND game_id_status <= ?
 	FOR UPDATE;`
 
-	err := tx.QueryRow(query, id, 3).Scan(&g.Id, &g.IdMoedasPares, &g.GameIdTypeTime)
+	err := tx.QueryRow(query, id, 3).Scan(&g.Id, &g.IdMoedasPares, &g.GameIdTypeTime, &g.GameProfitPercent)
 
 	if err != nil {
 		fmt.Println("STFG 1: " + err.Error())
@@ -38,7 +38,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 		return 0, 0, 0
 	}
 
-	bestResultGame, ok := searchBestPriceForEndGame(tx, &g, 0)
+	bestResultGame, ok := searchBestPriceForEndGame(tx, &g, 100)
 
 	if !ok {
 		tx.Rollback()
@@ -72,15 +72,14 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 		}
 	}
 
-	// Será que aquele group by em RPWG 3 é necessário ?
-	if !releasePaymentWinGame(tx, g.Id) {
-		fmt.Println("releasePaymentWinGame")
-		tx.Rollback()
-		return 0, 0, 0
-	}
-
-	// Será que aquele group by em RPRG 2 é necessário ?
-	if !releasePaymentRefundGame(tx, g.Id) {
+	if len(bestResultGame.ListPlayersWin) > 0 {
+		// Será que aquele group by em RPWG 3 é necessário ?
+		if !releasePaymentWinGame(tx, g.Id) {
+			fmt.Println("releasePaymentWinGame")
+			tx.Rollback()
+			return 0, 0, 0
+		}
+	} else if !releasePaymentRefundGame(tx, g.Id) { // Será que aquele group by em RPRG 2 é necessário ?
 		fmt.Println("releasePaymentRefundGame")
 		tx.Rollback()
 		return 0, 0, 0

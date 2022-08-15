@@ -116,7 +116,7 @@ func releasePaymentIndicationBonus(tx *sql.Tx, id uint64) bool {
 		err := rows.Scan(&bonus.Id, &bonus.IdUser, &bonus.Valor)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("RPIB 4: " + err.Error())
 		}
 
 		bonusIndicationList = append(bonusIndicationList, &b)

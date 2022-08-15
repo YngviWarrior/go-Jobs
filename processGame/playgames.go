@@ -22,8 +22,8 @@ func playGames(db *sql.DB) {
 		return
 	}
 
-	now := time.Now().Add(time.Second + 1).Add(time.Hour + 3).Format("2006-01-02 15:04:05")
-
+	now := time.Now().Add(time.Second + 1).Add(time.Hour * 3).Format("2006-01-02 15:04:05")
+	fmt.Println(now)
 	query := `SELECT id, id_moedas_pares, game_id_type_time
 	FROM binary_option_game
 	WHERE game_id_status = ?

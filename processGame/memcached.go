@@ -18,7 +18,7 @@ func memcacheConnect() {
 	err := cache.Ping()
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("MC 1: " + err.Error())
 		os.Exit(2)
 	}
 
@@ -28,7 +28,7 @@ func memcacheConnect() {
 	err = cache.Set(&i)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("MC 2: " + err.Error())
 		os.Exit(2)
 	}
 }

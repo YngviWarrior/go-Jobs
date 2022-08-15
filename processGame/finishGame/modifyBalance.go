@@ -8,16 +8,17 @@ import (
 )
 
 func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64, value float64, idRef uint64, acceptNegativeBalance bool) (afterValue float64) {
+	var balance float64
 	err := tx.QueryRow(`
 		SELECT valor
 		FROM saldo_valor
 		WHERE id_usuario = ?
 		AND id = ?
 		FOR UPDATE;
-	`, idUser, idBalance)
+	`, idUser, idBalance).Scan(&balance)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("MB 1: no balance.")
 	}
 
 	var s entities.Saldos
@@ -37,7 +38,7 @@ func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64,
 	s.Valor = value
 	s.TotalAntes = beforeValue
 	s.TotalAntes = afterValue
-	s.DataRegistro = time.Now().String()
+	s.DataRegistro = time.Now().Format("2006-01-02 15:04:05")
 
 	query := `
 		UPDATE saldos
@@ -45,11 +46,17 @@ func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64,
 		WHERE id_usuario = ? AND id_tipo = ?
 	`
 
-	tx.Exec(query, s.Valor, s.TotalAntes, s.TotalDepois, s.DataRegistro, s.IdUsuario, s.IdTipo)
+	res, err := tx.Exec(query, s.Valor, s.TotalAntes, s.TotalDepois, s.DataRegistro, s.IdOrigem, s.IdUsuario, s.IdTipo)
 
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+	if err != nil {
+		fmt.Println("MB 2: " + err.Error())
+	}
+
+	affcRows, _ := res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("MB 3: ")
+		return
+	}
 
 	return
 }

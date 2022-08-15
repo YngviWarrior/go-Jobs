@@ -40,6 +40,7 @@ type BonusIndicacao struct {
 	IdGame                 uint64  `json:"id_game"`
 	IdGameBet              uint64  `json:"id_game_bet"`
 	IdBalance              uint64  `json:"id_balance"`
+	IdType                 uint64  `json:"id_type"`
 	Valor                  float64 `json:"valor"`
 	DateRegister           string  `json:"date_register"`
 	StatusReceivedOPayment uint64  `json:"status_received_payment"`
@@ -63,6 +64,8 @@ type Candle struct {
 }
 
 type BestResultGame struct {
+	Id                      uint64                 `json:"id"`
+	IdGame                  uint64                 `json:"id_game"`
 	Price                   float64                `json:"price"`
 	TotalWinDolar           float64                `json:"total_win_dolar"`
 	TotalLoseDolar          float64                `json:"total_lose_dolar"`

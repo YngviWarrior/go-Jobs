@@ -63,10 +63,14 @@ func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 		WHERE b.id_game = ?
 	`, b.IdGame)
 
-	affcRows, _ := res.RowsAffected()
+	if err != nil {
+		fmt.Println("RPRG 5: " + err.Error())
+		return false
+	}
 
-	if err != nil || affcRows == 0 {
-		fmt.Println("RPRG 5: ")
+	affcRows, _ := res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("RPRG 6: ")
 		return false
 	}
 

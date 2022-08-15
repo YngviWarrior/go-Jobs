@@ -9,6 +9,8 @@ func processGameWinLose(betList []*entities.BinaryOptionGameBet, closePrice floa
 	b.Price = closePrice
 
 	for _, bet := range betList {
+		b.Id = bet.Id
+		b.IdGame = bet.IdGame
 		if closePrice == bet.PriceAmountSelected {
 			b.ListPlayersEqual = append(b.ListPlayersEqual, bet)
 			b.TotalEqualDolar = b.TotalEqualDolar + bet.BetAmountDolar

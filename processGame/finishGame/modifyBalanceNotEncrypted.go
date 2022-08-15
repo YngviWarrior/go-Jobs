@@ -20,7 +20,7 @@ func modifyBalanceNotEncrypted(tx *sql.Tx, idUser uint64, idBalance uint64, valu
 	err := tx.QueryRow(query, idUser, idBalance).Scan(&s.Valor)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("MCNE 1: " + err.Error())
 	}
 
 	beforeValue = s.Valor
@@ -30,7 +30,7 @@ func modifyBalanceNotEncrypted(tx *sql.Tx, idUser uint64, idBalance uint64, valu
 	bVal.Add(bVal, val)
 	v, _ := bVal.Float64()
 
-	beforeValue = v
+	afterValue = v
 
 	if !acceptNegative && bcSimplesComp(afterValue, "<", 0, 8) {
 		fmt.Println("After Value Neg Value")
@@ -39,15 +39,21 @@ func modifyBalanceNotEncrypted(tx *sql.Tx, idUser uint64, idBalance uint64, valu
 
 	query = `
 		UPDATE saldo_valor
-		SET valor = valor + :valor
+		SET valor = ?
 		WHERE id_usuario = ?
 		AND id = ?
 	`
 
-	_, err = tx.Exec(query, idUser, idBalance)
+	res, err := tx.Exec(query, afterValue, idUser, idBalance)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("MCNE 2: " + err.Error())
+	}
+
+	affcRows, _ := res.RowsAffected()
+	if affcRows == 0 {
+		fmt.Println("MCNE 3: ")
+		return
 	}
 
 	return

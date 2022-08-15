@@ -21,7 +21,8 @@ func finishGames(db *sql.DB) {
 	rows, err := db.Query(query, 3, now)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("FG 1: " + err.Error())
+		return
 	}
 
 	var list []*entities.BinaryOptionGame

@@ -11,11 +11,12 @@ import (
 func calcGames(db *sql.DB) {
 	tx, _ := db.Begin()
 
-	_, err := db.Exec("SET SESSION group_concat_max_len = 18446744073709551615;")
+	_, err := tx.Exec("SET SESSION group_concat_max_len = 18446744073709551615;")
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("CG 1: " + err.Error())
 		tx.Rollback()
+		return
 	}
 
 	now := time.Now().Add(time.Second + 1).Add(time.Hour * 3).Format("2006-01-02 15:04:05")
@@ -26,11 +27,12 @@ func calcGames(db *sql.DB) {
 	AND game_date_process <= ?
 	FOR UPDATE;`
 
-	rows, err := db.Query(query, 2, now)
+	rows, err := tx.Query(query, 2, now)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("CG 1: " + err.Error())
 		tx.Rollback()
+		return
 	}
 
 	var list []*entities.GamesUpdate
@@ -69,18 +71,15 @@ func calcGames(db *sql.DB) {
 		SET game_id_status = ?
 		WHERE id IN (` + gameList + `)`
 
-		_, err = db.Exec(query, 3)
+		_, err = tx.Exec(query, 3)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("CG 2: " + err.Error())
 			tx.Rollback()
+			return
 		}
 
-		err = tx.Commit()
-
-		if err != nil {
-			fmt.Println(err)
-		}
+		tx.Commit()
 
 		push(toCache)
 	}

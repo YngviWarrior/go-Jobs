@@ -15,11 +15,9 @@ func main() {
 		conn := dbConnect()
 
 		playGames(conn)
-
 		// time.Sleep(time.Second * 1)
 
 		calcGames(conn)
-
 		// time.Sleep(time.Second * 1)
 
 		finishGames(conn)

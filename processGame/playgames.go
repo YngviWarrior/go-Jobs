@@ -17,8 +17,9 @@ func playGames(db *sql.DB) {
 	_, err := db.Exec("SET SESSION group_concat_max_len = 18446744073709551615;")
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("PG 1: " + err.Error())
 		tx.Rollback()
+		return
 	}
 
 	now := time.Now().Add(time.Second + 1).Add(time.Hour * 3).Format("2006-01-02 15:04:05")
@@ -32,8 +33,9 @@ func playGames(db *sql.DB) {
 	rows, err := db.Query(query, 1, now)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("PG 2: " + err.Error())
 		tx.Rollback()
+		return
 	}
 
 	var list []*entities.GamesUpdate
@@ -75,14 +77,16 @@ func playGames(db *sql.DB) {
 		_, err = db.Exec(query, 2)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("PG 3: " + err.Error())
 			tx.Rollback()
+			return
 		}
 
 		err = tx.Commit()
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("PG 4: " + err.Error())
+			return
 		}
 
 		push(toCache)

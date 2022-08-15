@@ -11,7 +11,7 @@ import (
 )
 
 func finishGames(db *sql.DB) {
-	now := time.Now().Add(time.Second + 2).Format("2006-01-02 15:04:05")
+	now := time.Now().Add(time.Second + 2).Add(time.Hour + 3).Format("2006-01-02 15:04:05")
 
 	query := `SELECT id
 	FROM binary_option_game

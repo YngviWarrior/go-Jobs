@@ -9,14 +9,18 @@ import (
 func main() {
 	godotenv.Load(".env")
 
-	for range time.Tick(time.Second * 1) {
+	for range time.Tick(time.Second * 3) {
 		memcacheConnect()
 		conn := dbConnect()
 
-		// go playGames(conn)
+		playGames(conn)
 
-		// go calcGames(conn)
+		// time.Sleep(time.Second * 1)
 
-		go finishGames(conn)
+		calcGames(conn)
+
+		// time.Sleep(time.Second * 1)
+
+		finishGames(conn)
 	}
 }

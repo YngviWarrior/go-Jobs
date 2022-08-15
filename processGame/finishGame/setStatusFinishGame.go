@@ -27,7 +27,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 	}
 
 	query = `UPDATE binary_option_game
-		SET game_id_status = 3
+		SET game_id_status = 4
 		WHERE id = ?`
 
 	_, err = db.Exec(query, id)

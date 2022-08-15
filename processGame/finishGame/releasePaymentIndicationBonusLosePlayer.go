@@ -6,9 +6,9 @@ import (
 	"processgame/entities"
 )
 
-func releasePaymentIndicationBonusLosePlayer(db *sql.DB, id uint64) bool {
+func releasePaymentIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 	var b entities.BonusIndicacao
-	err := db.QueryRow(`
+	err := tx.QueryRow(`
 		SELECT id, id_user, id_user_origin, id_game, id_game_bet, id_balance, valor, date_register, status_received_payment
 		FROM bonus_indicacao
 		WHERE id_game = ? AND status_received_payment = 1
@@ -63,14 +63,14 @@ func releasePaymentIndicationBonusLosePlayer(db *sql.DB, id uint64) bool {
 		,g.company_tax_amount_dolar_from_game_tax = TRUNCATE(@campanyLeft,8)
 	WHERE  g.id = ?; `
 
-	_, err = db.Query(query, 1, id, 1, 2, id, 3, id)
+	_, err = tx.Query(query, 1, id, 1, 2, id, 3, id)
 
 	if err != nil {
 		fmt.Println("RPIBLP 2:" + err.Error())
 		return false
 	}
 
-	rows, err := db.Query(`
+	rows, err := tx.Query(`
 		SELECT b.id, b.id_user, b.valor
 		FROM bonus_indicacao b
 		WHERE b.id_game = ? AND b.status_received_payment = 0
@@ -97,14 +97,14 @@ func releasePaymentIndicationBonusLosePlayer(db *sql.DB, id uint64) bool {
 
 	if len(bonusIndicationList) > 0 {
 		for _, v := range bonusIndicationList {
-			modifyBalance(db, v.IdUser, 24, 3, v.Valor, v.Id, true)
+			modifyBalance(tx, v.IdUser, 24, 3, v.Valor, v.Id, true)
 		}
 	} else {
 		fmt.Println("RPIBLP 5: No Bonus" + err.Error())
 		return false
 	}
 
-	rows, err = db.Query(`
+	rows, err = tx.Query(`
 		SELECT b.id, b.id_user, b.valor
 		FROM bonus_trader b
 		WHERE b.id_game = ? AND b.status_received_payment = 0
@@ -131,14 +131,14 @@ func releasePaymentIndicationBonusLosePlayer(db *sql.DB, id uint64) bool {
 
 	if len(bonusTraderList) > 0 {
 		for _, v := range bonusTraderList {
-			modifyBalance(db, v.IdUser, 16, 9, v.Valor, v.Id, false)
+			modifyBalance(tx, v.IdUser, 16, 9, v.Valor, v.Id, false)
 		}
 	} else {
 		fmt.Println("RPIBLP 8: No Bonus Trader")
 		return false
 	}
 
-	res, err := db.Exec(`
+	res, err := tx.Exec(`
 		UPDATE bonus_indicacao b
 		JOIN bonus_indication_process bp ON bp.id = b.id AND bp.id_type = ?
 		SET b.status_received_payment = 1;

@@ -6,7 +6,7 @@ import (
 	"processgame/entities"
 )
 
-func lastCandleInfo(db *sql.DB, game *entities.BinaryOptionGame) (b entities.BestResultGame) {
+func lastCandleInfo(tx *sql.Tx, game *entities.BinaryOptionGame) (b entities.BestResultGame) {
 	// query = `SELECT id, nome, symbol, symbol_sync, id_coin1, id_coin2, utilizar_giro, sync_only_exchange_rate, not_list
 	// FROM moedas_pares m
 	// WHERE m.id = ?`
@@ -36,7 +36,7 @@ func lastCandleInfo(db *sql.DB, game *entities.BinaryOptionGame) (b entities.Bes
 
 	var c entities.Candle
 
-	err := db.QueryRow(query, game.IdMoedasPares).Scan(&c.Mts, &c.Open, &c.Close, &c.High, &c.Low, &c.Volume)
+	err := tx.QueryRow(query, game.IdMoedasPares).Scan(&c.Mts, &c.Open, &c.Close, &c.High, &c.Low, &c.Volume)
 
 	if err != nil {
 		fmt.Println(err)

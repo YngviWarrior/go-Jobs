@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func modifyBalance(db *sql.DB, idUser uint64, idBalance uint64, idOrigin uint64, value float64, idRef uint64, acceptNegativeBalance bool) (afterValue float64) {
-	err := db.QueryRow(`
+func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64, value float64, idRef uint64, acceptNegativeBalance bool) (afterValue float64) {
+	err := tx.QueryRow(`
 		SELECT valor
 		FROM saldo_valor
 		WHERE id_usuario = ?
@@ -29,7 +29,7 @@ func modifyBalance(db *sql.DB, idUser uint64, idBalance uint64, idOrigin uint64,
 		s.IdBinaryOptionGameBet = sql.NullInt64{Int64: int64(idRef), Valid: true}
 	}
 
-	beforeValue, afterValue := modifyBalanceNotEncrypted(db, idUser, idBalance, value, acceptNegativeBalance)
+	beforeValue, afterValue := modifyBalanceNotEncrypted(tx, idUser, idBalance, value, acceptNegativeBalance)
 
 	s.IdUsuario = idUser
 	s.IdTipo = idBalance
@@ -45,7 +45,7 @@ func modifyBalance(db *sql.DB, idUser uint64, idBalance uint64, idOrigin uint64,
 		WHERE id_usuario = ? AND id_tipo = ?
 	`
 
-	db.Exec(query, s.Valor, s.TotalAntes, s.TotalDepois, s.DataRegistro, s.IdUsuario, s.IdTipo)
+	tx.Exec(query, s.Valor, s.TotalAntes, s.TotalDepois, s.DataRegistro, s.IdUsuario, s.IdTipo)
 
 	// if err != nil {
 	// 	fmt.Println(err)

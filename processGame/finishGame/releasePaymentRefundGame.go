@@ -6,10 +6,10 @@ import (
 	"processgame/entities"
 )
 
-func releasePaymentRefundGame(db *sql.DB, id uint64) bool {
+func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 	var b entities.BinaryOptionGameBet
 
-	err := db.QueryRow(`
+	err := tx.QueryRow(`
 	SELECT id, hash_id, id_game, id_usuario, id_choice, id_balance, bet_amount_dolar, amount_win_dolar, price_amount_selected, 
 		status_received_win_payment, id_trader_follower, bot_use_status, date_register, bonus_trader_percent_from_tax_bet_win, 
 		bonus_indication_percent_from_tax_bet_win, status_received_refund_payment, refund, deleted
@@ -23,7 +23,7 @@ func releasePaymentRefundGame(db *sql.DB, id uint64) bool {
 		fmt.Println("RPRG 1: " + err.Error())
 	}
 
-	rows, err := db.Query(`
+	rows, err := tx.Query(`
 		SELECT b.id, b.id_usuario, (b.amount_win_dolar + b.bet_amount_dolar) as amount_win_dolar, b.id_balance
 		FROM binary_option_game_bet b
 		WHERE b.id_game = ? AND b.status_received_win_payment = 0 AND b.amount_win_dolar > 0
@@ -50,14 +50,14 @@ func releasePaymentRefundGame(db *sql.DB, id uint64) bool {
 
 	if len(listBet) > 0 {
 		for _, v := range listBet {
-			modifyBalance(db, v.IdUsuario, v.IdBalance, 10, v.AmountWinDolar, v.Id, false)
+			modifyBalance(tx, v.IdUsuario, v.IdBalance, 10, v.AmountWinDolar, v.Id, false)
 		}
 	} else {
 		fmt.Println("RPRG 4: No Bets.")
 		return false
 	}
 
-	res, err := db.Exec(`
+	res, err := tx.Exec(`
 		UPDATE binary_option_game_bet b
 		SET b.status_received_refund_payment = 1
 		WHERE b.id_game = ?

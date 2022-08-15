@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-func generateIndicationBonusLosePlayer(db *sql.DB, id uint64) bool {
+func generateIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 	var b entities.BonusIndicacao
-	err := db.QueryRow(`
+	err := tx.QueryRow(`
 		SELECT id, id_user, id_user_origin, id_game, id_game_bet, id_balance, valor, date_register, status_received_payment
 		FROM bonus_indicacao
 		WHERE id_game = ?
@@ -24,7 +24,7 @@ func generateIndicationBonusLosePlayer(db *sql.DB, id uint64) bool {
 	activePeriod := 1
 	now := time.Now().Format("2006-01-02 15:04:05")
 
-	res, err := db.Exec(`
+	res, err := tx.Exec(`
 		INSERT INTO bonus_indicacao (id_user, id_user_origin, id_game, id_game_bet, id_balance, date_register, valor, status_received_payment) 
 		SELECT u.id_indicador, u.id, b.id_game, b.id, ?, ?
 			,IF(b.amount_win_dolar = 0,

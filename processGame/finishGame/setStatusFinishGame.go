@@ -19,7 +19,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 	AND game_id_status <= ?
 	FOR UPDATE;`
 
-	err := db.QueryRow(query, id, 3).Scan(&g.Id, &g.IdMoedasPares, &g.GameIdTypeTime)
+	err := tx.QueryRow(query, id, 3).Scan(&g.Id, &g.IdMoedasPares, &g.GameIdTypeTime)
 
 	if err != nil {
 		fmt.Println("STFG 1: " + err.Error())
@@ -30,7 +30,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 		SET game_id_status = 4
 		WHERE id = ?`
 
-	_, err = db.Exec(query, id)
+	_, err = tx.Exec(query, id)
 
 	if err != nil {
 		fmt.Println("STFG 2: " + err.Error())
@@ -38,14 +38,14 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 		return 0, 0, 0
 	}
 
-	bestResultGame, ok := searchBestPriceForEndGame(db, &g, 0)
+	bestResultGame, ok := searchBestPriceForEndGame(tx, &g, 0)
 
 	if !ok {
 		tx.Rollback()
 		return 0, 0, 0
 	}
 
-	if !saveBestResultGame(db, &g, bestResultGame) {
+	if !saveBestResultGame(tx, &g, bestResultGame) {
 		fmt.Println("saveBestResultGame")
 		tx.Rollback()
 		return 0, 0, 0
@@ -54,7 +54,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 	//Não testado
 	if len(bestResultGame.ListPlayersWin) > 0 {
 		if statusBonusIndicacao {
-			if !generateIndicationBonus(db, g.Id) {
+			if !generateIndicationBonus(tx, g.Id) {
 				fmt.Println("generateIndicationBonus")
 				tx.Rollback()
 				return 0, 0, 0
@@ -65,7 +65,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 
 	if statusBonusIndicacaofromlosePlayer {
 		// Query estáva errada, isso tá sendo usado ??? Não encontra nada nas tabelas, mt menos insere? é pra funcionar ?
-		if !generateIndicationBonusLosePlayer(db, g.Id) {
+		if !generateIndicationBonusLosePlayer(tx, g.Id) {
 			fmt.Println("generateIndicationBonusLosePlayer")
 			tx.Rollback()
 			return 0, 0, 0
@@ -73,14 +73,14 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 	}
 
 	// Será que aquele group by em RPWG 3 é necessário ?
-	if !releasePaymentWinGame(db, g.Id) {
+	if !releasePaymentWinGame(tx, g.Id) {
 		fmt.Println("releasePaymentWinGame")
 		tx.Rollback()
 		return 0, 0, 0
 	}
 
 	// Será que aquele group by em RPRG 2 é necessário ?
-	if !releasePaymentRefundGame(db, g.Id) {
+	if !releasePaymentRefundGame(tx, g.Id) {
 		fmt.Println("releasePaymentRefundGame")
 		tx.Rollback()
 		return 0, 0, 0
@@ -88,7 +88,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 
 	//Não testado
 	if statusBonusIndicacao {
-		if !releasePaymentIndicationBonus(db, g.Id) {
+		if !releasePaymentIndicationBonus(tx, g.Id) {
 			fmt.Println("releasePaymentIndicationBonus")
 			tx.Rollback()
 			return 0, 0, 0
@@ -96,7 +96,7 @@ func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
 	}
 
 	if statusBonusIndicacaofromlosePlayer {
-		if !releasePaymentIndicationBonusLosePlayer(db, g.Id) {
+		if !releasePaymentIndicationBonusLosePlayer(tx, g.Id) {
 			fmt.Println("releasePaymentIndicationBonusLosePlayer")
 			tx.Rollback()
 			return 0, 0, 0

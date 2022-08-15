@@ -6,7 +6,7 @@ import (
 	"processgame/entities"
 )
 
-func searchBestPriceForEndGame(db *sql.DB, game *entities.BinaryOptionGame, profit float64) (info *entities.BestResultGame, ok bool) {
+func searchBestPriceForEndGame(tx *sql.Tx, game *entities.BinaryOptionGame, profit float64) (info *entities.BestResultGame, ok bool) {
 	query := `
 	SELECT id, hash_id, id_game, id_usuario, id_choice, id_balance, bet_amount_dolar, amount_win_dolar, price_amount_selected, 
 		status_received_win_payment, id_trader_follower, bot_use_status, date_register, bonus_trader_percent_from_tax_bet_win, 
@@ -15,7 +15,7 @@ func searchBestPriceForEndGame(db *sql.DB, game *entities.BinaryOptionGame, prof
 	WHERE id_game = ?
 	-- GROUP BY price_amount_selected`
 
-	rows, err := db.Query(query, game.Id)
+	rows, err := tx.Query(query, game.Id)
 
 	if err != nil {
 		fmt.Println("SBPFEG 1: " + err.Error())
@@ -40,7 +40,7 @@ func searchBestPriceForEndGame(db *sql.DB, game *entities.BinaryOptionGame, prof
 		betList = append(betList, &b)
 	}
 
-	temp := lastCandleInfo(db, game)
+	temp := lastCandleInfo(tx, game)
 
 	info = &temp
 

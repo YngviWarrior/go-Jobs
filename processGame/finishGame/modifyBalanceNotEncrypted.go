@@ -7,7 +7,7 @@ import (
 	"processgame/entities"
 )
 
-func modifyBalanceNotEncrypted(db *sql.DB, idUser uint64, idBalance uint64, value float64, acceptNegative bool) (beforeValue float64, afterValue float64) {
+func modifyBalanceNotEncrypted(tx *sql.Tx, idUser uint64, idBalance uint64, value float64, acceptNegative bool) (beforeValue float64, afterValue float64) {
 	query := `
 		SELECT valor
 		FROM saldo_valor
@@ -17,7 +17,7 @@ func modifyBalanceNotEncrypted(db *sql.DB, idUser uint64, idBalance uint64, valu
 	`
 
 	var s entities.Saldos
-	err := db.QueryRow(query, idUser, idBalance).Scan(&s.Valor)
+	err := tx.QueryRow(query, idUser, idBalance).Scan(&s.Valor)
 
 	if err != nil {
 		fmt.Println(err)
@@ -44,7 +44,7 @@ func modifyBalanceNotEncrypted(db *sql.DB, idUser uint64, idBalance uint64, valu
 		AND id = ?
 	`
 
-	_, err = db.Exec(query, idUser, idBalance)
+	_, err = tx.Exec(query, idUser, idBalance)
 
 	if err != nil {
 		fmt.Println(err)

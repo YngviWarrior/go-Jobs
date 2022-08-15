@@ -7,7 +7,7 @@ import (
 	"processgame/entities"
 )
 
-func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame *entities.BestResultGame) bool {
+func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame *entities.BestResultGame) bool {
 	if len(bestResultGame.ListPlayersWin) > 0 {
 		query := `UPDATE binary_option_game_bet SET amount_win_dolar = ? WHERE id IN (?);`
 
@@ -22,7 +22,7 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 			x.Mul(x, betAmountDollar)
 		}
 
-		_, err := db.Exec(query, x, g.Id)
+		_, err := tx.Exec(query, x, g.Id)
 
 		if err != nil {
 			fmt.Println("SBRG 1: " + err.Error())
@@ -33,7 +33,7 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 	if len(bestResultGame.ListPlayersEqual) > 0 {
 		query := `UPDATE binary_option_game_bet SET refund = 1 WHERE id IN (?);`
 
-		_, err := db.Exec(query, g.Id)
+		_, err := tx.Exec(query, g.Id)
 
 		if err != nil {
 			fmt.Println("SBRG 2: " + err.Error())
@@ -76,7 +76,7 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 	WHERE g.id = ?;
 	`
 
-	_, err := db.Exec(query, bestResultGame.TotalWinDolar, gameWinAmountPercent, bestResultGame.TotalLoseDolar, gameLoseAmountPercent,
+	_, err := tx.Exec(query, bestResultGame.TotalWinDolar, gameWinAmountPercent, bestResultGame.TotalLoseDolar, gameLoseAmountPercent,
 		bestResultGame.TotalEqualDolar, gameEqualAmountPercent, bestResultGame.Price, bestResultGame.TotalLoseDolarTraderBot,
 		bestResultGame.TotalWinDolarTraderBot, g.Id)
 
@@ -90,7 +90,7 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 	SET b.status_received_win_payment = 1
 	WHERE b.id_game = ? AND b.amount_win_dolar = 0 AND b.refund = 0;`
 
-	_, err = db.Exec(query, g.Id)
+	_, err = tx.Exec(query, g.Id)
 
 	if err != nil {
 		fmt.Println("SBRG 3: " + err.Error())

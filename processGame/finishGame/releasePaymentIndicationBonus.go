@@ -6,7 +6,7 @@ import (
 	"processgame/entities"
 )
 
-func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
+func releasePaymentIndicationBonus(db *sql.DB, id uint64) bool {
 	var b entities.BonusIndicacao
 	err := db.QueryRow(`
 		SELECT id, id_user, id_user_origin, id_game, id_game_bet, id_balance, valor, date_register, status_received_payment
@@ -16,7 +16,7 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 	`, id).Scan(&b.Id, &b.IdUser, &b.IdUserOrigin, &b.IdGame, &b.IdGameBet, &b.IdBalance, &b.Valor, &b.DateRegister, &b.StatusReceivedOPayment)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("RPIB 1: " + err.Error())
 	}
 
 	query := `
@@ -95,7 +95,8 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 	_, err = db.Query(query, 1, id, 2, id, 1, 2, id, 3, id)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("RPIB 2: " + err.Error())
+		return false
 	}
 
 	rows, err := db.Query(`
@@ -105,7 +106,7 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 	`, id)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("RPIB 3: " + err.Error())
 	}
 
 	var bonusIndicationList []*entities.BonusIndicacao
@@ -125,6 +126,9 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 		for _, v := range bonusIndicationList {
 			modifyBalance(db, v.IdUser, 16, 3, v.Valor, v.Id, false)
 		}
+	} else {
+		fmt.Println("RPIB 5: No Bets.")
+		return false
 	}
 
 	rows, err = db.Query(`
@@ -134,7 +138,7 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 	`, id)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("RPIB 6: " + err.Error())
 	}
 
 	var bonusTraderList []*entities.BonusTrader
@@ -144,7 +148,8 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 		err := rows.Scan(&bonus.Id, &bonus.IdUser, &bonus.Valor)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("RPIB 7: " + err.Error())
+			return false
 		}
 
 		bonusTraderList = append(bonusTraderList, &bonus)
@@ -154,6 +159,9 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 		for _, v := range bonusTraderList {
 			modifyBalance(db, v.IdUser, 16, 9, v.Valor, v.Id, false)
 		}
+	} else {
+		fmt.Println("RPIB 8: No Bonus.")
+		return false
 	}
 
 	_, err = db.Exec(`
@@ -168,6 +176,9 @@ func releasePaymentIndicationBonus(db *sql.DB, id uint64) {
 	`, 1, 2)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("RPIB 9:" + err.Error())
+		return false
 	}
+
+	return true
 }

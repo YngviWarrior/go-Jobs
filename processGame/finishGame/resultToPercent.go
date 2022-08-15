@@ -2,7 +2,7 @@ package finishgame
 
 import math "math/big"
 
-func resultToPercent(result *math.Float, total *math.Float, decimais int64) float64 {
+func resultToPercent(result *math.Float, total *math.Float, decimals int64) float64 {
 	temp := math.NewFloat(0)
 	x, _ := result.Float64()
 	y, _ := total.Float64()

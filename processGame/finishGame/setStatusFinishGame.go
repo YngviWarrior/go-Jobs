@@ -9,7 +9,9 @@ import (
 var statusBonusIndicacao bool
 var statusBonusIndicacaofromlosePlayer bool = true
 
-func SetStatusFinishGame(db *sql.DB, tx *sql.Tx, id uint64) (uint64, uint64, int64) {
+func SetStatusFinishGame(db *sql.DB, id uint64) (uint64, uint64, int64) {
+	tx, _ := db.Begin()
+
 	var g entities.BinaryOptionGame
 	query := `SELECT id, id_moedas_pares, game_id_type_time
 	FROM binary_option_game
@@ -20,7 +22,8 @@ func SetStatusFinishGame(db *sql.DB, tx *sql.Tx, id uint64) (uint64, uint64, int
 	err := db.QueryRow(query, id, 3).Scan(&g.Id, &g.IdMoedasPares, &g.GameIdTypeTime)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("STFG 1: " + err.Error())
+		return 0, 0, 0
 	}
 
 	query = `UPDATE binary_option_game
@@ -30,38 +33,74 @@ func SetStatusFinishGame(db *sql.DB, tx *sql.Tx, id uint64) (uint64, uint64, int
 	_, err = db.Exec(query, id)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("STFG 2: " + err.Error())
 		tx.Rollback()
-	}
-
-	bestResultGame := searchBestPriceForEndGame(db, &g, 0)
-
-	if bestResultGame.Price == 0 {
 		return 0, 0, 0
 	}
 
-	saveBestResultGame(db, &g, bestResultGame)
+	bestResultGame, ok := searchBestPriceForEndGame(db, &g, 0)
 
+	if !ok {
+		tx.Rollback()
+		return 0, 0, 0
+	}
+
+	if !saveBestResultGame(db, &g, bestResultGame) {
+		fmt.Println("saveBestResultGame")
+		tx.Rollback()
+		return 0, 0, 0
+	}
+
+	//Não testado
 	if len(bestResultGame.ListPlayersWin) > 0 {
 		if statusBonusIndicacao {
-			generateIndicationBonus(db, g.Id)
+			if !generateIndicationBonus(db, g.Id) {
+				fmt.Println("generateIndicationBonus")
+				tx.Rollback()
+				return 0, 0, 0
+			}
 
 		}
 	}
 
 	if statusBonusIndicacaofromlosePlayer {
-		generateIndicationBonusLosePlayer(db, g.Id)
+		// Query estáva errada, isso tá sendo usado ??? Não encontra nada nas tabelas, mt menos insere? é pra funcionar ?
+		if !generateIndicationBonusLosePlayer(db, g.Id) {
+			fmt.Println("generateIndicationBonusLosePlayer")
+			tx.Rollback()
+			return 0, 0, 0
+		}
 	}
 
-	releasePaymentWinGame(db, g.Id)
-	releasePaymentRefundGame(db, g.Id)
+	// Será que aquele group by em RPWG 3 é necessário ?
+	if !releasePaymentWinGame(db, g.Id) {
+		fmt.Println("releasePaymentWinGame")
+		tx.Rollback()
+		return 0, 0, 0
+	}
 
+	// Será que aquele group by em RPRG 2 é necessário ?
+	if !releasePaymentRefundGame(db, g.Id) {
+		fmt.Println("releasePaymentRefundGame")
+		tx.Rollback()
+		return 0, 0, 0
+	}
+
+	//Não testado
 	if statusBonusIndicacao {
-		releasePaymentIndicationBonus(db, g.Id)
+		if !releasePaymentIndicationBonus(db, g.Id) {
+			fmt.Println("releasePaymentIndicationBonus")
+			tx.Rollback()
+			return 0, 0, 0
+		}
 	}
 
 	if statusBonusIndicacaofromlosePlayer {
-		releasePaymentIndicationBonusLosePlayer(db, g.Id)
+		if !releasePaymentIndicationBonusLosePlayer(db, g.Id) {
+			fmt.Println("releasePaymentIndicationBonusLosePlayer")
+			tx.Rollback()
+			return 0, 0, 0
+		}
 	}
 
 	tx.Commit()

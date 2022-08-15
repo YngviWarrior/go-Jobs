@@ -7,36 +7,37 @@ import (
 	"processgame/entities"
 )
 
-func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame *entities.BestResultGame) {
+func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame *entities.BestResultGame) bool {
 	if len(bestResultGame.ListPlayersWin) > 0 {
 		query := `UPDATE binary_option_game_bet SET amount_win_dolar = ? WHERE id IN (?);`
-		var ids string
+
 		x := math.NewFloat(g.GameProfitPercent)
 
 		for _, v := range bestResultGame.ListPlayersWin {
 			percent := math.NewFloat(100)
-			// precision := math.NewFloat(8)
+
 			x.Quo(x, percent)
 
 			betAmountDollar := math.NewFloat(v.BetAmountDolar)
 			x.Mul(x, betAmountDollar)
 		}
 
-		_, err := db.Exec(query, x, ids)
+		_, err := db.Exec(query, x, g.Id)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("SBRG 1: " + err.Error())
+			return false
 		}
 	}
 
 	if len(bestResultGame.ListPlayersEqual) > 0 {
 		query := `UPDATE binary_option_game_bet SET refund = 1 WHERE id IN (?);`
-		var ids string
 
-		_, err := db.Exec(query, ids)
+		_, err := db.Exec(query, g.Id)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("SBRG 2: " + err.Error())
+			return false
 		}
 	}
 
@@ -55,6 +56,10 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 	gameLoseAmountPercent := resultToPercent(TotalLoseDolar, gameTotalBet, 2)
 	gameEqualAmountPercent := resultToPercent(TotalEqualDolar, gameTotalBet, 2)
 
+	// OBS: Necessita estar sincronizado com fechamento de candles !
+	// O jogo termina no mesmo valor para todos.
+	// TotalDolar & gameTotalBet serão sempre iguais, gerando % de 100 sempre...
+
 	query := `
 	UPDATE binary_option_game g
 	LEFT JOIN binary_option_game_bet b ON b.id_game = g.id
@@ -68,7 +73,6 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 		,g.game_calculated = 1
 		,g.total_lose_dolar_trader_bot = ?
 		,g.total_win_dolar_trader_bot = ?
-			
 	WHERE g.id = ?;
 	`
 
@@ -78,6 +82,7 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 
 	if err != nil {
 		fmt.Println(err)
+		return false
 	}
 
 	query = `
@@ -88,6 +93,9 @@ func saveBestResultGame(db *sql.DB, g *entities.BinaryOptionGame, bestResultGame
 	_, err = db.Exec(query, g.Id)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("SBRG 3: " + err.Error())
+		return false
 	}
+
+	return true
 }

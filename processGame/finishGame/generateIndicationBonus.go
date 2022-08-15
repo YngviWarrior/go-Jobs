@@ -7,22 +7,22 @@ import (
 	"time"
 )
 
-func generateIndicationBonus(db *sql.DB, id uint64) {
+func generateIndicationBonus(db *sql.DB, id uint64) bool {
 	var b entities.BonusIndicacao
 	err := db.QueryRow(`
 		SELECT id, id_user, id_user_origin, id_game, id_game_bet, id_balance, valor, date_register, status_received_payment
 		FROM bonus_indicacao
-		WHERE id_game = {$idGame}
+		WHERE id_game = ?
 		LIMIT 0,1
-	`).Scan(&b.Id, &b.IdUser, &b.IdUserOrigin, &b.IdGame, &b.IdGameBet, &b.IdBalance, &b.Valor, &b.DateRegister, &b.StatusReceivedOPayment)
+	`, id).Scan(&b.Id, &b.IdUser, &b.IdUserOrigin, &b.IdGame, &b.IdGameBet, &b.IdBalance, &b.Valor, &b.DateRegister, &b.StatusReceivedOPayment)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("GIB 1:" + err.Error())
 	}
 
 	now := time.Now().Format("2006-01-02 15:04:05")
 
-	_, err = db.Exec(`
+	res, err := db.Exec(`
 		INSERT INTO bonus_indicacao (id_user, id_user_origin, id_game, id_game_bet, id_balance, date_register, valor) 
 		SELECT u.id_indicador, u.id, b.id_game, b.id, ?, ? ,TRUNCATE(b.bonus_indication_percent_from_tax_bet_win / 100 * ((100 - g.game_profit_percent) / 100 * b.bet_amount_dolar) ,2)
 		FROM binary_option_game_bet b
@@ -44,8 +44,12 @@ func generateIndicationBonus(db *sql.DB, id uint64) {
 		AND b.id_balance = ? ;
 	`, 16, now, id, 3, 16, now, id, 3)
 
-	if err != nil {
-		fmt.Println(err)
+	lastInsert, _ := res.LastInsertId()
+
+	if err != nil || lastInsert == 0 {
+		fmt.Println("GIB 2: ")
+		return false
 	}
 
+	return true
 }

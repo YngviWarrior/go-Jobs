@@ -4,23 +4,23 @@ import (
 	"processgame/entities"
 )
 
-func processGameWinLose(betList []*entities.BinaryOptionGameBet, closePrice float64, gameProfitPercent float64) (b *entities.BestResultGame) {
-
+// Separate win, lose and equal bets and sum values generating win, loss and equal amounts of all bets.
+func processGameWinLose(betList []*entities.BinaryOptionGameBet, closePrice float64, gameProfitPercent float64) (b entities.BestResultGame) {
 	b.Price = closePrice
-	for _, v := range betList {
 
-		if closePrice == v.PriceAmountSelected {
-			b.ListPlayersEqual = append(b.ListPlayersEqual, v)
-			b.TotalEqualDolar = b.TotalEqualDolar + v.BetAmountDolar
-		} else if (v.IdChoice == 1 && closePrice > v.PriceAmountSelected) || (v.IdChoice == 2 && closePrice < v.PriceAmountSelected) {
-			b.ListPlayersWin = append(b.ListPlayersWin, v)
+	for _, bet := range betList {
+		if closePrice == bet.PriceAmountSelected {
+			b.ListPlayersEqual = append(b.ListPlayersEqual, bet)
+			b.TotalEqualDolar = b.TotalEqualDolar + bet.BetAmountDolar
+		} else if (bet.IdChoice == 1 && closePrice > bet.PriceAmountSelected) || (bet.IdChoice == 2 && closePrice < bet.PriceAmountSelected) {
+			b.ListPlayersWin = append(b.ListPlayersWin, bet)
 
-			if v.IdBalance == 3 {
-				b.TotalWinDolar = b.TotalWinDolar + v.BetAmountDolar
+			if bet.IdBalance == 3 {
+				b.TotalWinDolar = b.TotalWinDolar + bet.BetAmountDolar
 			}
 		} else {
-			if v.IdBalance == 3 {
-				b.TotalLoseDolar = b.TotalLoseDolar + v.BetAmountDolar
+			if bet.IdBalance == 3 {
+				b.TotalLoseDolar = b.TotalLoseDolar + bet.BetAmountDolar
 			}
 		}
 	}

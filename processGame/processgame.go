@@ -13,9 +13,9 @@ func main() {
 		memcacheConnect()
 		conn := dbConnect()
 
-		go playGames(conn)
+		// go playGames(conn)
 
-		go calcGames(conn)
+		// go calcGames(conn)
 
 		go finishGames(conn)
 	}

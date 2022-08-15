@@ -11,7 +11,7 @@ import (
 )
 
 func finishGames(db *sql.DB) {
-	now := time.Now().Add(time.Second + 2).Format("2006-01-02 15:04:05")
+	now := time.Now().Add(time.Second + 2).Add(time.Hour * 3).Format("2006-01-02 15:04:05")
 
 	query := `SELECT id
 	FROM binary_option_game
@@ -37,8 +37,6 @@ func finishGames(db *sql.DB) {
 		list = append(list, &g)
 	}
 
-	fmt.Printf("%v finish changed \n", len(list))
-
 	if len(list) > 0 {
 		var toCache []entities.GamesUpdate
 		for _, v := range list {
@@ -57,5 +55,6 @@ func finishGames(db *sql.DB) {
 		push(toCache)
 	}
 
+	fmt.Printf("%v finish changed \n", len(list))
 	defer db.Close()
 }

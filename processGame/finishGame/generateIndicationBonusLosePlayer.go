@@ -9,16 +9,16 @@ import (
 
 func generateIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 	var b entities.BonusIndicacao
-	err := tx.QueryRow(`
+	_ = tx.QueryRow(`
 		SELECT id, id_user, id_user_origin, id_game, id_game_bet, id_balance, valor, date_register, status_received_payment
 		FROM bonus_indicacao
 		WHERE id_game = ?
 		LIMIT 0,1
 	`, id).Scan(&b.Id, &b.IdUser, &b.IdUserOrigin, &b.IdGame, &b.IdGameBet, &b.IdBalance, &b.Valor, &b.DateRegister, &b.StatusReceivedOPayment)
 
-	if err != nil {
-		fmt.Println("GIBLP 1: " + err.Error())
-		// return false
+	if b.Id != 0 {
+		fmt.Println("GIBLP 1: Already has a bonus.")
+		return false
 	}
 
 	activePeriod := 1
@@ -42,7 +42,7 @@ func generateIndicationBonusLosePlayer(tx *sql.Tx, id uint64) bool {
 			AND (u.total_deposit_balance_play - u.total_lose_balance_play) > 0
 		WHERE b.id_game = ?
 		AND b.id_balance = ?
-		`, 24, now, activePeriod, id, 3)
+		`, 24, now, activePeriod, id, 20)
 
 	inserId, _ := res.LastInsertId()
 

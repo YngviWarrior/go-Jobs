@@ -24,10 +24,12 @@ func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64,
 	var s entities.Saldos
 
 	switch idBalance {
-	case 3:
+	case 3, 20:
 		s.IdBonusIndicacao = sql.NullInt64{Int64: int64(idRef), Valid: true}
 	case 7, 10:
 		s.IdBinaryOptionGameBet = sql.NullInt64{Int64: int64(idRef), Valid: true}
+	default:
+		return
 	}
 
 	beforeValue, afterValue := modifyBalanceNotEncrypted(tx, idUser, idBalance, value, acceptNegativeBalance)
@@ -37,7 +39,7 @@ func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64,
 	s.IdOrigem = idOrigin
 	s.Valor = value
 	s.TotalAntes = beforeValue
-	s.TotalAntes = afterValue
+	s.TotalDepois = afterValue
 	s.DataRegistro = time.Now().Format("2006-01-02 15:04:05")
 
 	query := `

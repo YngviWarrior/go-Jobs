@@ -20,10 +20,10 @@ func releasePaymentWinGame(tx *sql.Tx, id uint64) bool {
 		&b.BonusIndicationPercentFromTaxBetWin, &b.StatusReceivedRefundPayment, &b.Refund, &b.Deleted)
 
 	if err != nil {
-		fmt.Println("RPWG 1: " + err.Error())
+		fmt.Println("RPWG 1: That's OK." + err.Error())
 	}
 
-	_, err = tx.Exec(`
+	res, err := tx.Exec(`
 		UPDATE usuarios u
 		JOIN (
 			SELECT b.id_usuario, SUM(b.bet_amount_dolar) as bet_amount_dolar
@@ -40,11 +40,18 @@ func releasePaymentWinGame(tx *sql.Tx, id uint64) bool {
 			u.total_deposit_balance_play,
 			(u.total_lose_balance_play + t.bet_amount_dolar)
 			)
-	`, id, 3)
+	`, id, 20)
 
 	if err != nil {
 		fmt.Println("RPWG 2: " + err.Error())
 		return false
+	}
+
+	affctRows, _ := res.RowsAffected()
+
+	if affctRows == 0 {
+		fmt.Println("RPWG 3: No user to update.")
+		return true
 	}
 
 	rows, err := tx.Query(`
@@ -77,7 +84,7 @@ func releasePaymentWinGame(tx *sql.Tx, id uint64) bool {
 		}
 	} else {
 		fmt.Println("RPWG 5: No bets.")
-		return false
+		return true
 	}
 
 	_, err = tx.Exec(`

@@ -9,7 +9,7 @@ import (
 func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 	var b entities.BinaryOptionGameBet
 
-	err := tx.QueryRow(`
+	_ = tx.QueryRow(`
 	SELECT id, hash_id, id_game, id_usuario, id_choice, id_balance, bet_amount_dolar, amount_win_dolar, price_amount_selected, 
 		status_received_win_payment, id_trader_follower, bot_use_status, date_register, bonus_trader_percent_from_tax_bet_win, 
 		bonus_indication_percent_from_tax_bet_win, status_received_refund_payment, refund, deleted
@@ -19,14 +19,15 @@ func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 		&b.PriceAmountSelected, &b.StatusReceivedWinPayment, &b.IdTraderFollower, &b.BotUseStatus, &b.DateRegister, &b.BonusTraderPercentFromTaxBetWin,
 		&b.BonusIndicationPercentFromTaxBetWin, &b.StatusReceivedRefundPayment, &b.Refund, &b.Deleted)
 
-	if err != nil {
-		fmt.Println("RPRG 1: " + err.Error())
+	if b.Id != 0 {
+		fmt.Println("RPRG 1: Already refunded.")
+		return false
 	}
 
 	rows, err := tx.Query(`
 		SELECT b.id, b.id_usuario, (b.amount_win_dolar + b.bet_amount_dolar) as amount_win_dolar, b.id_balance
 		FROM binary_option_game_bet b
-		WHERE b.id_game = ? AND b.status_received_win_payment = 0 AND b.amount_win_dolar > 0
+		WHERE b.id_game = ? AND b.status_received_win_payment = 0 AND b.refund > 0
 		-- GROUP BY b.id_usuario
 	`, id)
 
@@ -35,9 +36,9 @@ func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 		return false
 	}
 
-	var bet entities.BinaryOptionGameBet
 	var listBet []*entities.BinaryOptionGameBet
 	for rows.Next() {
+		var bet entities.BinaryOptionGameBet
 		err := rows.Scan(&bet.Id, &bet.IdUsuario, &bet.AmountWinDolar, &bet.IdBalance)
 
 		if err != nil {
@@ -53,8 +54,8 @@ func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 			modifyBalance(tx, v.IdUsuario, v.IdBalance, 10, v.AmountWinDolar, v.Id, false)
 		}
 	} else {
-		fmt.Println("RPRG 4: No Bets.")
-		return false
+		fmt.Println("RPRG 4: No Bets OR a loss bet.")
+		return true
 	}
 
 	res, err := tx.Exec(`

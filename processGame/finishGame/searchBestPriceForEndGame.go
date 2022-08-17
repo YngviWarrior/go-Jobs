@@ -6,7 +6,7 @@ import (
 	"processgame/entities"
 )
 
-func searchBestPriceForEndGame(tx *sql.Tx, game *entities.BinaryOptionGame, profit float64) (info *entities.BestResultGame, ok bool) {
+func searchBestPriceForEndGame(tx *sql.Tx, game *entities.BinaryOptionGame, profit float64) (info *entities.BestResultGame, ok int64) {
 	query := `
 	SELECT id, hash_id, id_game, id_usuario, id_choice, id_balance, bet_amount_dolar, amount_win_dolar, price_amount_selected, 
 		status_received_win_payment, id_trader_follower, bot_use_status, date_register, bonus_trader_percent_from_tax_bet_win, 
@@ -46,13 +46,13 @@ func searchBestPriceForEndGame(tx *sql.Tx, game *entities.BinaryOptionGame, prof
 
 	if len(betList) == 0 {
 		fmt.Println("SBPFEG 3: betList is empty")
-		ok = true
+		ok = 1
 		return
 	}
 
 	temp = processGameWinLose(betList, info.Price, game.GameProfitPercent)
 
 	info = &temp
-	ok = true
+	ok = 2
 	return
 }

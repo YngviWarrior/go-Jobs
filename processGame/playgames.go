@@ -79,6 +79,7 @@ func playGames(db *sql.DB) {
 		if err != nil {
 			fmt.Println("PG 3: " + err.Error())
 			tx.Rollback()
+
 			return
 		}
 

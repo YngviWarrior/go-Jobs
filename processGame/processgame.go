@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -21,6 +20,5 @@ func main() {
 		// time.Sleep(time.Second * 1)
 
 		finishGames(conn)
-		fmt.Println("Finished")
 	}
 }

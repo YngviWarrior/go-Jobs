@@ -40,20 +40,24 @@ func finishGames(db *sql.DB) {
 
 	if len(list) > 0 {
 		var toCache []entities.GamesUpdate
-		for _, v := range list {
-			if v.Id == 2 {
-				idGame, idSymbol, idTime := finishgame.SetStatusFinishGame(db, v.Id)
-				break
+		for i, v := range list {
+			if i%50 == 0 {
+				time.Sleep(time.Second * 1)
+			}
 
-				if idGame != 0 {
+			go func(v *entities.BinaryOptionGame) {
+				// fmt.Println(v.Id)
+
+				idGame, idSymbol, idTime := finishgame.SetStatusFinishGame(db, v.Id)
+				if idGame >= 0 {
 					var game entities.GamesUpdate
-					game.Id = idGame
+					game.Id = uint64(idGame)
 					game.IdMoedasPares = idSymbol
 					game.GameIdTypeTime = idTime
 
 					toCache = append(toCache, game)
 				}
-			}
+			}(v)
 		}
 
 		push(toCache)

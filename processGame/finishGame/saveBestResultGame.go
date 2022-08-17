@@ -43,10 +43,17 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 	if len(bestResultGame.ListPlayersEqual) > 0 {
 		query := `UPDATE binary_option_game_bet SET refund = 1 WHERE id IN (?);`
 
-		_, err := tx.Exec(query, g.Id)
+		res, err := tx.Exec(query, g.Id)
 
 		if err != nil {
 			fmt.Println("SBRG 3: " + err.Error())
+			return false
+		}
+
+		affcRows, _ := res.RowsAffected()
+
+		if affcRows == 0 {
+			fmt.Println("SBRG 4: ")
 			return false
 		}
 	}

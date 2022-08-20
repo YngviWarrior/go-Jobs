@@ -24,7 +24,6 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 			x.Mul(x, betAmountDollar)
 
 			amountWinDolar, _ = x.Float64()
-			fmt.Printf("ID: %v // User: %v %v\n", g.Id, v.IdUsuario, amountWinDolar)
 
 			res, err := tx.Exec(query, amountWinDolar, v.Id)
 
@@ -50,7 +49,7 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 				ids += fmt.Sprintf("%v,", v.Id)
 			}
 		}
-		fmt.Printf("IDS: %v \n", ids)
+
 		query := `UPDATE binary_option_game_bet SET refund = 1 WHERE id IN (` + ids + `);`
 
 		res, err := tx.Exec(query)

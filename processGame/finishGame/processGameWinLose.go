@@ -18,11 +18,11 @@ func processGameWinLose(betList []*entities.BinaryOptionGameBet, closePrice floa
 		} else if (bet.IdChoice == 1 && closePrice > bet.PriceAmountSelected) || (bet.IdChoice == 2 && closePrice < bet.PriceAmountSelected) {
 			b.ListPlayersWin = append(b.ListPlayersWin, bet)
 
-			if bet.IdBalance == 3 {
+			if bet.IdBalance == 3 || bet.IdBalance == 20 {
 				b.TotalWinDolar = b.TotalWinDolar + bet.BetAmountDolar
 			}
 		} else {
-			if bet.IdBalance == 3 {
+			if bet.IdBalance == 3 || bet.IdBalance == 20 {
 				b.TotalLoseDolar = b.TotalLoseDolar + bet.BetAmountDolar
 			}
 		}

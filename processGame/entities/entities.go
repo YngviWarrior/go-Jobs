@@ -112,9 +112,10 @@ type BinaryOptionGameBet struct {
 }
 
 type GamesUpdate struct {
-	Id             uint64 `json:"id"`
-	IdMoedasPares  uint64 `json:"id_moedas_pares"`
+	IdGames        string `json:"id_games"`
+	IdMoedasPares  uint64 `json:"idSymbolPair"`
 	GameIdTypeTime int64  `json:"game_id_type_time"`
+	GameIdStatus   int64  `json:"game_status"`
 }
 
 type BinaryOptionGame struct {

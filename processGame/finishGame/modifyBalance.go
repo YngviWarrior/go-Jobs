@@ -9,6 +9,7 @@ import (
 
 func modifyBalance(tx *sql.Tx, idUser uint64, idBalance uint64, idOrigin uint64, value float64, idRef uint64, acceptNegativeBalance bool) (afterValue float64) {
 	var balance float64
+
 	err := tx.QueryRow(`
 		SELECT valor
 		FROM saldo_valor

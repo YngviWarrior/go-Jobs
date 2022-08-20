@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -33,18 +34,17 @@ func memcacheConnect() {
 	}
 }
 
-func push(toCache []entities.GamesUpdate) {
-	gameList, err := cache.Get("GamesUpdate")
+func push(toCache []*entities.GamesUpdate) {
+	_, err := cache.Get("GamesUpdate")
 	i := memcache.Item{}
 	i.Key = "GamesUpdate"
 
-	if err != nil {
-		i.Value = []byte(fmt.Sprintf("%v", toCache))
-		cache.Set(&i)
-	} else if gameList != nil {
-		newList := append(gameList.Value, []byte(fmt.Sprintf("%v", toCache))...)
+	jsonToCache, err2 := json.Marshal(toCache)
 
-		i.Value = []byte(fmt.Sprintf("%v", newList))
-		cache.Set(&i)
+	if err2 != nil {
+		fmt.Println("Marshal Json: " + err.Error())
 	}
+
+	i.Value = jsonToCache
+	cache.Set(&i)
 }

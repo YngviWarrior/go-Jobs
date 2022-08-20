@@ -13,12 +13,14 @@ func main() {
 		memcacheConnect()
 		conn := dbConnect()
 
+		// createBet(conn)
 		playGames(conn)
-		// time.Sleep(time.Second * 1)
+		// time.Sleep(time.Second * 2)
 
 		calcGames(conn)
-		// time.Sleep(time.Second * 1)
+		// time.Sleep(time.Second * 2)
 
 		finishGames(conn)
+		// conn.Close()
 	}
 }

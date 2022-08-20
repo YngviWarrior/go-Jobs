@@ -11,10 +11,10 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 	if len(bestResultGame.ListPlayersWin) > 0 {
 		query := `UPDATE binary_option_game_bet SET amount_win_dolar = ? WHERE id = ?;`
 
-		x := math.NewFloat(g.GameProfitPercent)
 		var amountWinDolar float64
 
 		for _, v := range bestResultGame.ListPlayersWin {
+			x := math.NewFloat(g.GameProfitPercent)
 			percent := math.NewFloat(100)
 
 			x.Quo(x, percent)
@@ -24,29 +24,39 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 			x.Mul(x, betAmountDollar)
 
 			amountWinDolar, _ = x.Float64()
-		}
+			fmt.Printf("ID: %v // User: %v %v\n", g.Id, v.IdUsuario, amountWinDolar)
 
-		res, err := tx.Exec(query, amountWinDolar, &bestResultGame.Id)
+			res, err := tx.Exec(query, amountWinDolar, v.Id)
 
-		if err != nil {
-			fmt.Println("SBRG 1: " + err.Error())
-			return false
-		}
+			if err != nil {
+				fmt.Println("SBRG 1: " + err.Error())
+				return false
+			}
 
-		affcRows, _ := res.RowsAffected()
-		if affcRows == 0 {
-			fmt.Println("SBRG 2: ")
-			return false
+			affcRows, _ := res.RowsAffected()
+			if affcRows == 0 {
+				fmt.Println("SBRG 2: ")
+				return false
+			}
 		}
 	}
 
 	if len(bestResultGame.ListPlayersEqual) > 0 {
-		query := `UPDATE binary_option_game_bet SET refund = 1 WHERE id IN (?);`
+		var ids string
+		for i, v := range bestResultGame.ListPlayersEqual {
+			if i+1 == len(bestResultGame.ListPlayersEqual) {
+				ids += fmt.Sprintf("%v", v.Id)
+			} else {
+				ids += fmt.Sprintf("%v,", v.Id)
+			}
+		}
+		fmt.Printf("IDS: %v \n", ids)
+		query := `UPDATE binary_option_game_bet SET refund = 1 WHERE id IN (` + ids + `);`
 
-		res, err := tx.Exec(query, g.Id)
+		res, err := tx.Exec(query)
 
 		if err != nil {
-			fmt.Println("SBRG 3: " + err.Error())
+			fmt.Println("SBRG 4: " + err.Error())
 			return false
 		}
 
@@ -98,19 +108,19 @@ func saveBestResultGame(tx *sql.Tx, g *entities.BinaryOptionGame, bestResultGame
 		bestResultGame.TotalWinDolarTraderBot, g.Id)
 
 	if err != nil {
-		fmt.Println("SBRG 4: " + err.Error())
+		fmt.Println("SBRG 5: " + err.Error())
 		return false
 	}
 
 	query = `
-	UPDATE binary_option_game_bet b
-	SET b.status_received_win_payment = 1
-	WHERE b.id_game = ? AND b.amount_win_dolar = 0 AND b.refund = 0;`
+		UPDATE binary_option_game_bet b
+		SET b.status_received_win_payment = 1
+		WHERE b.id_game = ? AND b.amount_win_dolar = 0 AND b.refund = 0;`
 
 	_, err = tx.Exec(query, g.Id)
 
 	if err != nil {
-		fmt.Println("SBRG 5: " + err.Error())
+		fmt.Println("SBRG 6: " + err.Error())
 		return false
 	}
 

@@ -62,7 +62,7 @@ func releasePaymentRefundGame(tx *sql.Tx, id uint64) bool {
 		UPDATE binary_option_game_bet b
 		SET b.status_received_refund_payment = 1
 		WHERE b.id_game = ?
-	`, b.IdGame)
+	`, id)
 
 	if err != nil {
 		fmt.Println("RPRG 5: " + err.Error())
